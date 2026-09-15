@@ -459,10 +459,8 @@ function generateFilters(report, affected) {
     `;
 }
 
-function getDefaultTab(report) {
-    if (report.violations.length > 0) return 'violations';
-    if (report.incomplete.length > 0) return 'incomplete';
-    return 'passes';
+function getDefaultTab(report) { 
+    return report.violations.length > 0 ? 'violations': 'incomplete';
 }
 
 function generateTabs(report) {
