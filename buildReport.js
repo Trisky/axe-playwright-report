@@ -338,8 +338,8 @@ function generateBaseContent(template, report) {
         });
     
         window.addEventListener('DOMContentLoaded', () => {
-            const violationsTab = document.querySelector('[data-tab="violations"]');
-            if (violationsTab) violationsTab.click();
+            const defaultTab = document.querySelector('[data-tab="${getDefaultTab(report)}"]');
+            if (defaultTab) defaultTab.click();
     
             const impactFilter = document.getElementById("impact-filter");
             const tagFilter = document.getElementById("tag-filter");
@@ -459,7 +459,14 @@ function generateFilters(report, affected) {
     `;
 }
 
+function getDefaultTab(report) {
+    if (report.violations.length > 0) return 'violations';
+    if (report.incomplete.length > 0) return 'incomplete';
+    return 'passes';
+}
+
 function generateTabs(report) {
+    const defaultTab = getDefaultTab(report);
     const tabs = [{
         id: 'violations',
         name: 'Violations',
@@ -508,7 +515,7 @@ function generateTabs(report) {
        <input type="checkbox" id="select-all-checkbox-${tabName}" class="absolute left-5 w-4 h-4 mr-2" aria-label="Select all ${tabName}">`
             : '';
         tabContent += `
-<div data-tab="${tab.id}" class="relative flex items-center justify-center py-2 border-b-2 hover:bg-gray-100 text-gray-500 ${tab.hoverClass} ${tab.activeClass}">
+<div data-tab="${tab.id}" class="relative flex items-center justify-center py-2 border-b-2 hover:bg-gray-100 text-gray-500 ${tab.hoverClass} ${tab.activeClass}${tab.id === defaultTab ? ' active' : ''}">
 ${selectAllCheckbox}
   <button ${svgContent}
     <span class="ml-2">${tab.name}</span>
@@ -526,7 +533,7 @@ ${selectAllCheckbox}
     `;
 }
 
-function generateTabContent(tabName, issueCards) {
+function generateTabContent(tabName, issueCards, defaultTab) {
     const tabTypeText = {
         'violations': 'violation',
         'inapplicable': 'inapplicable',
@@ -535,7 +542,7 @@ function generateTabContent(tabName, issueCards) {
     }[tabName];
 
     return `
-        <div data-tab-content="${tabName}" class="${tabName !== 'violations' ? 'hidden' : ''}">
+        <div data-tab-content="${tabName}" class="${tabName !== defaultTab ? 'hidden' : ''}">
             ${issueCards}
             <div class="no-results-message p-4 my-4 text-center text-gray-500 bg-gray-50 rounded-md shadow-sm hidden">
                 No ${tabTypeText} issues found matching your search criteria.
@@ -683,11 +690,11 @@ function generateIssueCards(issues, affected, screenshot) {
     return issueCards;
 }
 
-function combineIssueCards(issues) {
+function combineIssueCards(issues, defaultTab) {
     return `
-       ${generateTabContent('violations', issues[0])}
-       ${generateTabContent('incomplete', issues[1])}
-       ${generateTabContent('passes', issues[2])}
+    ${generateTabContent('violations', issues[0], defaultTab)}
+    ${generateTabContent('incomplete', issues[1], defaultTab)}
+    ${generateTabContent('passes', issues[2], defaultTab)}
     `;
 }
 
@@ -1207,7 +1214,7 @@ function generateReport() {
         //baseContent = baseContent.replace("{{SEARCH_BAR}}", searchBar);
         baseContent = baseContent.replace("{{TABS}}", tabs);
         baseContent = baseContent.replace("{{FILTERS}}", '');
-        baseContent = baseContent.replace("{{ISSUE_CARDS}}", combineIssueCards([violationsIssueCards, incompleteIssueCards, passedIssueCards]));
+        baseContent = baseContent.replace("{{ISSUE_CARDS}}", combineIssueCards([violationsIssueCards, incompleteIssueCards, passedIssueCards], getDefaultTab(report)));
         baseContent = baseContent.replace("./main.js", "../main.js");
         baseContent = baseContent.replace("./styles.css", "../styles.css");
 
